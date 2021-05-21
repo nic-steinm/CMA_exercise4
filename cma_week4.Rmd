@@ -1,0 +1,83 @@
+---
+title: "cma_exercise4"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Prep Tasks
+
+```{r}
+
+testfun <- function(){
+  print("hello world")
+}
+
+testfun()
+
+
+testfun <- function(x){
+  print(x)
+}
+
+testfun("hi guys")
+
+my_age <- function(birthday, units){
+  difftime(Sys.time(), birthday, units = units)
+}
+
+my_age("1995-05-23", "hours")
+
+
+```
+
+Task 1: Writing euclidian distance function
+
+```{r}
+euclidian_distance <- function(x1, y1, x2, y2){ 
+  sqrt((x1-x2)^2+(y1-y2)^2)
+}
+
+```
+
+Task 2: Prepare Analysis
+
+```{r}
+library(readr)        
+library(dplyr)        
+library(ggplot2)      
+library(lubridate)
+
+```
+
+Task 3: Create Join Key
+
+```{r}
+
+#reading in the data
+wildschwein <- read_delim("data/wildschwein_BE_2056.txt", ",")
+
+#rounding time
+wildschwein <- wildschwein %>% 
+  mutate(roundtime_15 = round_date(DatetimeUTC,"15mins"))
+
+
+split_by_individual <- split(wildschwein, wildschwein$TierID)
+Sabi <- split_by_individual[["002A"]]
+Rosa <- split_by_individual[["016A"]]
+Ruth <- split_by_individual[["018A"]]
+
+joined_indivduals <- inner_join(Sabi, Rosa, "roundtime_15", suffix = c(".Sabi", ".Rosa"))
+
+joined_indivduals <- joined_indivduals %>%
+  mutate(
+    individ_dist = euclidian_distance(E.Sabi, N.Sabi, E.Rosa, N.Rosa),
+    meets = ifelse(individ_dist <= 30, TRUE, FALSE)
+  )
+
+
+
+
+```
