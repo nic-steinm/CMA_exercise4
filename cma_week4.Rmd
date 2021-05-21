@@ -39,7 +39,6 @@ Task 1: Writing euclidian distance function
 euclidian_distance <- function(x1, y1, x2, y2){ 
   sqrt((x1-x2)^2+(y1-y2)^2)
 }
-
 ```
 
 Task 2: Prepare Analysis
@@ -63,21 +62,46 @@ wildschwein <- read_delim("data/wildschwein_BE_2056.txt", ",")
 wildschwein <- wildschwein %>% 
   mutate(roundtime_15 = round_date(DatetimeUTC,"15mins"))
 
+```
 
+Task 4: Measuring distance at concurrent locations
+
+```{r}
 split_by_individual <- split(wildschwein, wildschwein$TierID)
 Sabi <- split_by_individual[["002A"]]
 Rosa <- split_by_individual[["016A"]]
 Ruth <- split_by_individual[["018A"]]
 
 joined_indivduals <- inner_join(Sabi, Rosa, "roundtime_15", suffix = c(".Sabi", ".Rosa"))
+#Picked inner_joins as this only keeps data that has a matching key, cuts down on data size too.
 
 joined_indivduals <- joined_indivduals %>%
   mutate(
     individ_dist = euclidian_distance(E.Sabi, N.Sabi, E.Rosa, N.Rosa),
-    meets = ifelse(individ_dist <= 30, TRUE, FALSE)
+    meets = ifelse(individ_dist <= 100, TRUE, FALSE),
+    E = (E.Sabi + E.Rosa)/2, #Point in the middle when meeting
+    N = (N.Sabi + N.Rosa)/2
   )
 
-
-
+#Tiying up the dataframe
+meeting_points <- subset(joined_indivduals, meets == TRUE, select = c(E.Sabi, N.Sabi, E.Rosa, N.Rosa, individ_dist, roundtime_15, meets, E, N))
 
 ```
+
+
+Task 5: Visualize data
+
+```{r}
+wildschwein_subset <- subset(wildschwein, TierName == "Sabi" | TierName == "Rosa" )
+
+ggplot()+
+  geom_point(data = wildschwein_subset, aes(x = E, y = N, color = TierName), alpha = 0.2, inherit.aes = F)+
+  geom_point(data = meeting_points, aes(x = E, y = N, colour = meet), shape = 1, fill = NA, color = "black")+
+  xlim(2569250, 2571000)+
+  ylim(1204000, 1206500)+
+  coord_fixed()
+    
+        
+```
+
+
